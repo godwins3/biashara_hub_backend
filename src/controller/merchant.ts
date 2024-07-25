@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const addProduct = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
         try{
-            // console.log(req)
+            console.log(req)
             const userId = req.userId;
             const { name, category, description, price, base64Image } = req.body;
             const imageId = uuidv4().split('-')[0];
