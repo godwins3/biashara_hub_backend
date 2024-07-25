@@ -9,27 +9,36 @@ import { v4 as uuidv4 } from 'uuid';
 // Add Product
 export const addProduct = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { name, category, description, price, base64Image } = req.body;
-        const imageId = uuidv4().split('-')[0];
+        try{
+            // console.log(req)
+            const userId = req.userId;
+            const { name, category, description, price, base64Image } = req.body;
+            const imageId = uuidv4().split('-')[0];
+            console.log('Image ID:', imageId);
+            console.log('Base64 Image:', base64Image)
 
-        const imageUrl = await uploadImage(base64Image, imageId);
-        if (typeof imageUrl != 'string') {
-            return next(createHttpError(500, 'Unknown error occurred'));
+            const imageUrl = await uploadImage(base64Image, imageId);
+            if (typeof imageUrl != 'string') {
+                return next(createHttpError(500, 'Unknown error occurred'));
+            }
+            if (userId) {
+                const product = new Product<IProduct>({
+                    name,
+                    category,
+                    description,
+                    price,
+                    imageUrl,
+                    userId,
+                });
+                const result = await product.save();
+                console.log(result)
+                return res.json(result);
+            }
+            next(createHttpError(401, 'Request not allowed'));
+        } catch (error) {
+            console.error(error)
+            return next(createHttpError(500, 'Internal server error'));
         }
-        if (userId) {
-            const product = new Product<IProduct>({
-                name,
-                category,
-                description,
-                price,
-                imageUrl,
-                userId,
-            });
-            const result = await product.save();
-            return res.json(result);
-        }
-        next(createHttpError(401, 'Request not allowed'));
     }
 );
 
