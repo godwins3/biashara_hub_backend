@@ -15,7 +15,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { authorize } from './middleware/authorize';
 import { authenticate } from './middleware/authenticate';
 import { authenticateMerchant } from './middleware/authenticateMerchant';
-import payments from './routes/payments';
+
 
 const app = express();
 
@@ -41,7 +41,6 @@ cloudinary.config({
 app.use('/api/auth', authorize, auth);
 app.use('/api/merchant', authenticate, authenticateMerchant, merchant);
 app.use('/api/client', authenticate, client);
-app.use('/api/payment', authenticate, payments);
 
 // Error handler
 app.use(errorHandler);

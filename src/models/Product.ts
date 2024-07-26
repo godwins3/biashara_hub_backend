@@ -1,11 +1,9 @@
 import { Schema, model } from 'mongoose';
 const productCategories = [
-    'Cereals',
-    'Legumes',
-    'Fruits',
-    'Vegetables',
-    'Fertilizer',
-    'Seeds',
+    'Fashion',
+    'Food',
+    'Appliances',
+    'Moving',
 ] as const;
 
 export interface IProduct {

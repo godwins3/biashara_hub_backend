@@ -10,14 +10,17 @@ import { v4 as uuidv4 } from 'uuid';
 export const addProduct = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
         try{
-            console.log(req)
             const userId = req.userId;
             const { name, category, description, price, base64Image } = req.body;
             const imageId = uuidv4().split('-')[0];
-            console.log('Image ID:', imageId);
-            console.log('Base64 Image:', base64Image)
+            
+            const base64Match = base64Image.match(/^data:image\/[a-zA-Z]+;base64,(.+)$/);
 
-            const imageUrl = await uploadImage(base64Image, imageId);
+            const base64 = base64Match[1]; // This is the actual Base64 string
+            const buffer = Buffer.from(base64, 'base64');
+            console.log('Buffer created successfully:', buffer);
+            
+            const imageUrl = await uploadImage(buffer, imageId);
             if (typeof imageUrl != 'string') {
                 return next(createHttpError(500, 'Unknown error occurred'));
             }

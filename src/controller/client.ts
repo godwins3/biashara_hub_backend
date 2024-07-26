@@ -1,12 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import asyncErrorHandler from '../utils/asyncErrorHandler';
 import { IRequest } from '../middleware/authenticateMerchant';
-import User from '../models/User';
 import Merchant, { IMerchant } from '../models/Merchant';
 import createHttpError from 'http-errors';
 import Product from '../models/Product';
 import Cart, { ICart } from '../models/Cart';
-import Wish, { IWish } from '../models/Wish';
 
 // Become to Merchant
 export const becomeMerchant = asyncErrorHandler(
@@ -151,82 +149,3 @@ export const search = asyncErrorHandler(async (req, res, next) => {
 
     res.json(results);
 });
-
-// add to wishlist
-export const updateWish = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { productId, quantity } = req.body;
-        if (userId) {
-            if (quantity == 0) {
-                await Cart.findOneAndDelete({ userId, productId });
-                return res.json({
-                    status: 'success',
-                    message: 'Product removed',
-                });
-            }
-            const updateCart = await Wish.findOneAndUpdate(
-                { productId, userId },
-                { $inc: { quantity } },
-                { new: true }
-            );
-            if (updateCart) {
-                return res.json(updateCart);
-            }
-            const wish = new Wish<IWish>({ productId, userId, quantity });
-            const result = await wish.save();
-            return res.json(result);
-        }
-        next(createHttpError(404, 'User not found'));
-    }
-);
-
-// view wish
-export const viewWish = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        if (userId) {
-            const wish = await Wish.aggregate([
-                {
-                    $lookup: {
-                        from: 'products',
-                        localField: 'productId',
-                        foreignField: '_id',
-                        as: 'productData',
-                    },
-                },
-            ]);
-            return res.json(wish);
-        }
-        next(createHttpError(404, 'User not found'));
-    }
-);
-
-// remove from wishlist
-export const removeFromWish = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { productId } = req.body;
-
-        if (!userId) {
-            return next(createHttpError(404, 'User not found'));
-        }
-
-        const wishItem = await Wish.findOneAndDelete({ userId, productId });
-
-        if (!wishItem) {
-            return next(createHttpError(404, 'Product not found in wish list'));
-        }
-
-        return res.json({
-            status: 'success',
-            message: 'Product removed from wish list',
-        });
-    }
-);
-
-
-
-// TODO:
-// Product rating
-// Product Reviews
