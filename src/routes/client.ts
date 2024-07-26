@@ -7,8 +7,6 @@ import {
     search,
     updateCart,
     viewCart,
-    updateWish,
-    viewWish,
 } from '../controller/client';
 const router = express.Router();
 
@@ -19,6 +17,4 @@ router.get('/search/:searchTerm', search);
 router.get('/cartCount', cartCount);
 router.post('/becomeMerchant', becomeMerchant);
 router.post('/updateCart', updateCart);
-router.post('/addWish', updateWish);
-router.post('/viewWish', viewWish)
 export default router;
