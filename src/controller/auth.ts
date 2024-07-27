@@ -12,10 +12,10 @@ dotenv.config();
 // Signup
 export const signUp = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { username, email, password } = req.body;
+        const { username, email, password, role } = req.body;
         const name = username;
         const hashedPassword = await encPassword(password);
-        const user = new User({ name, email, password: hashedPassword });
+        const user = new User({ name, email, password: hashedPassword, role });
         const result = await user.save();
         const resultObject = result.toObject();
         delete resultObject.password;
@@ -25,21 +25,6 @@ export const signUp = asyncErrorHandler(
     }
 );
 
-// Signup
-export const merchantSignUp = asyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
-        const { username, email, password } = req.body;
-        const name = username;
-        const hashedPassword = await encPassword(password);
-        const user = new User({ name, email, password: hashedPassword });
-        const result = await user.save();
-        const resultObject = result.toObject();
-        delete resultObject.password;
-        const token = jwt.sign(resultObject, process.env.JWT_SECRET_KEY!);
-        res.cookie('cookieName', '1234', { maxAge: 900000, httpOnly: true });
-        res.json(resultObject);
-    }
-);
 
 // Login
 export const login = asyncErrorHandler(
