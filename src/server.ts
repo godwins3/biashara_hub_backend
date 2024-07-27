@@ -9,6 +9,7 @@ import connectDB from './utils/db';
 
 // Routes
 import auth from './routes/auth';
+import admin from './routes/admin';
 import merchant from './routes/merchant';
 import client from './routes/client';
 import { errorHandler } from './middleware/errorHandler';
@@ -40,6 +41,7 @@ cloudinary.config({
 // Routes
 app.use('/api/auth', authorize, auth);
 app.use('/api/merchant', authenticate, authenticateMerchant, merchant);
+app.use('api/admin', authenticate, admin)
 app.use('/api/client', authenticate, client);
 
 // Error handler
