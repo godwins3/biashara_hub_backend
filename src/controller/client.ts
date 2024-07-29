@@ -83,85 +83,17 @@ export const getProductsByCategory = asyncErrorHandler(
     }
 );
 
-// Add to cart
-export const updateCart = asyncErrorHandler(
+// Get Merchant Products
+export const getProviderProducts = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { productId, quantity } = req.body;
-        if (userId) {
-            if (quantity == 0) {
-                await Cart.findOneAndDelete({ userId, productId });
-                return res.json({
-                    status: 'success',
-                    message: 'Product removed',
-                });
-            }
-            const updateCart = await Cart.findOneAndUpdate(
-                { productId, userId },
-                { $inc: { quantity } },
-                { new: true }
-            );
-            if (updateCart) {
-                return res.json(updateCart);
-            }
-            const cart = new Cart<ICart>({ productId, userId, quantity });
-            const result = await cart.save();
-            return res.json(result);
-        }
-        next(createHttpError(404, 'User not found'));
-    }
-);
-
-// View Cart
-export const viewCart = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        if (userId) {
-            const cart = await Cart.aggregate([
-                {
-                    $lookup: {
-                        from: 'products',
-                        localField: 'productId',
-                        foreignField: '_id',
-                        as: 'productData',
-                    },
-                },
-            ]);
-            return res.json(cart);
-        }
-        next(createHttpError(404, 'User not found'));
-    }
-);
-
-// Get Cart Count
-export const cartCount = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const count = await Cart.countDocuments({ userId });
-        return res.json(count);
-    }
-);
-
-// remove from cart
-export const removeFromCart = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { productId } = req.body;
-
-        if (!userId) {
-            return next(createHttpError(404, 'User not found'));
-        }
-
-        const cartItem = await Cart.findOneAndDelete({ userId, productId });
-
-        if (!cartItem) {
-            return next(createHttpError(404, 'Product not found in cart'));
-        }
-
-        return res.json({
-            status: 'success',
-            message: 'Product removed from cart',
-        });
+        const {providerId} = req.body;
+        const { pageNumber, limit } = req.params;
+        const query = Product.find({ userId: providerId })
+            .sort({ createdAt: -1 })
+            .skip((Number(pageNumber) - 1) * Number(limit))
+            .limit(Number(limit));
+        const products = await query.exec();
+        res.json(products);
     }
 );
 
