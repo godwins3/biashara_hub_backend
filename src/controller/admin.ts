@@ -2,21 +2,15 @@ import { NextFunction, Request, Response } from 'express';
 import User from '../models/User';
 import Merchant from '../models/Merchant';
 import asyncErrorHandler from '../utils/asyncErrorHandler';
+import Product from '../models/Product';
 
-// Get all users
+// Get all users count
 export const getUsers = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { pageNumber, limit } = req.query;
-        const query = User.find()
-            .sort({ createdAt: -1 })
-            .skip((Number(pageNumber) - 1) * Number(limit))
-            .limit(Number(limit));
         const userCount = await User.countDocuments().exec();
-        const userDetails = await query.exec();
         res.json({
-            count: userCount,
-            users: userDetails,
-          });
+            count: userCount
+        });
     }
 );
 
@@ -28,11 +22,21 @@ export const getMerchants = asyncErrorHandler(
             .sort({ createdAt: -1 })
             .skip((Number(pageNumber) - 1) * Number(limit))
             .limit(Number(limit));
-        const merchantCount = await User.countDocuments().exec();
+        const merchantCount = await Merchant.countDocuments().exec();
         const merchantDetails = await query.exec();
         res.json({
             count: merchantCount,
             users: merchantDetails,
-          });
+        });
+    }
+);
+
+// get all products count
+export const getProducts = asyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const productCount = await Product.countDocuments().exec();
+        res.json({
+            count: productCount
+        });
     }
 );

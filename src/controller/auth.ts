@@ -6,16 +6,35 @@ import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import Merchant from '../models/Merchant';
+import Provider, { IProvider } from '../models/Provider';
 
 dotenv.config();
 
-// Signup
-export const signUp = asyncErrorHandler(
+const findUserOrProvider = async (email: string, password: string) => {
+    const user = await User.findOne({ email }).select('+password');
+    if (user) {
+        return { entity: user, hashedPassword: user.password as string };
+    }
+
+    const provider = await Provider.findOne({ email }).select('+password');
+    if (provider) {
+        return { entity: provider, hashedPassword: provider.password as string };
+    }
+
+    return null;
+};
+const getLicenseId = async (userId: string) => {
+    const checkMerchant = await Merchant.findOne({ userId });
+    return checkMerchant?.licenseId || 0;
+};
+
+//  Seeker Signup
+export const seekerSignUp = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { username, email, password, role } = req.body;
+        const { username, email, phone, password, role } = req.body;
         const name = username;
         const hashedPassword = await encPassword(password);
-        const user = new User({ name, email, password: hashedPassword, role });
+        const user = new User({ name, email, phone, password: hashedPassword, role });
         const result = await user.save();
         const resultObject = result.toObject();
         delete resultObject.password;
@@ -25,36 +44,50 @@ export const signUp = asyncErrorHandler(
     }
 );
 
+//  Seeker Signup
+export const providerSignUp = asyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { username, email, phone, location, description, password, role } = req.body;
+        const name = username;
+        const hashedPassword = await encPassword(password);
+        const provider = new Provider({ name, email, phone, location, description, password: hashedPassword, role });
+        const result = await provider.save();
+        const resultObject = result.toObject();
+        delete resultObject.password;
+        const token = jwt.sign(resultObject, process.env.JWT_SECRET_KEY!);
+        res.cookie('cookieName', '1234', { maxAge: 900000, httpOnly: true });
+        res.json(resultObject);
+    }
+);
 
 // Login
 export const login = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const { email, password } = req.body;
+        const lowerCaseEmail = email.toLowerCase();
 
-        const user: IUser | null = await User.findOne({
-            email: email.toLowerCase(),
-        }).select('+password');
+        const user = await findUserOrProvider(lowerCaseEmail, password);
 
-        if (user) {
-            const hashedPassword = user.password as string;
-            const isMatch = await verifyPassword(password, hashedPassword);
-            if (isMatch) {
-                const result = user.toObject();
-                const checkMerchant = await Merchant.findOne({
-                    userId: result._id,
-                });
-                const licenseId = checkMerchant?.licenseId || 0;
-
-                delete result.password;
-                const token = jwt.sign(result, process.env.JWT_SECRET_KEY!);
-                res.cookie('ezToken', token);
-                res.json({ status: 'Success', licenseId, ...result, token });
-            } else {
-                next(createHttpError(404, 'User not found'));
-            }
-        } else {
-            next(createHttpError(404, 'User not found'));
+        if (!user) {
+            return next(createHttpError(404, 'User not found'));
         }
+
+        const { entity, hashedPassword } = user;
+
+        const isMatch = await verifyPassword(password, hashedPassword);
+
+        if (!isMatch) {
+            return next(createHttpError(404, 'User not found'));
+        }
+
+        const result = entity.toObject();
+        delete result.password;
+
+        const licenseId = await getLicenseId(result._id);
+        const token = jwt.sign(result, process.env.JWT_SECRET_KEY!);
+
+        res.cookie('ezToken', token);
+        res.json({ status: 'Success', licenseId, ...result, token });
     }
 );
 
@@ -80,3 +113,6 @@ export const resetPassword = asyncErrorHandler(
         }
     }
 );
+
+// verify email
+

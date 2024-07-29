@@ -12,10 +12,13 @@ import auth from './routes/auth';
 import admin from './routes/admin';
 import merchant from './routes/merchant';
 import client from './routes/client';
+import { getUsers, getMerchants, getProducts } from './controller/admin';
 import { errorHandler } from './middleware/errorHandler';
 import { authorize } from './middleware/authorize';
 import { authenticate } from './middleware/authenticate';
 import { authenticateMerchant } from './middleware/authenticateMerchant';
+
+const router = express.Router();
 
 
 const app = express();
@@ -39,9 +42,12 @@ cloudinary.config({
     api_secret: process.env.CLOUD_API_SECRET,
 });
 // Routes
+app.get('/api/admin/getUsers', getUsers);
+app.get('/api/admin/getMerchants', getMerchants);
+app.get('/api/admin/getProducts', getProducts);
 app.use('/api/auth', authorize, auth);
 app.use('/api/merchant', authenticate, authenticateMerchant, merchant);
-app.use('api/admin', authenticate, admin)
+app.use('api/admin', authorize, admin)
 app.use('/api/client', authenticate, client);
 
 // Error handler
