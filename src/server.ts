@@ -11,6 +11,7 @@ import connectDB from './utils/db';
 import auth from './routes/auth';
 import admin from './routes/admin';
 import merchant from './routes/merchant';
+import book from './routes/book';
 import client from './routes/client';
 import { getUsers, getMerchants, getProducts } from './controller/admin';
 import { errorHandler } from './middleware/errorHandler';
@@ -49,6 +50,7 @@ app.use('/api/auth', authorize, auth);
 app.use('/api/merchant', authenticate, authenticateMerchant, merchant);
 app.use('api/admin', authorize, admin)
 app.use('/api/client', authenticate, client);
+app.use('/api/bookings', authorize, book)
 
 // Error handler
 app.use(errorHandler);
