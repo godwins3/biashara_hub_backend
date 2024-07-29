@@ -5,6 +5,7 @@ import Merchant, { IMerchant } from '../models/Merchant';
 import createHttpError from 'http-errors';
 import Product from '../models/Product';
 import Cart, { ICart } from '../models/Cart';
+import Provider from '../models/Provider';
 
 // Become to Merchant
 export const becomeMerchant = asyncErrorHandler(
@@ -25,6 +26,34 @@ export const becomeMerchant = asyncErrorHandler(
                 .json({ status: 'success', message: 'Already a merchant' });
         }
         next(createHttpError(401, 'Request not allowed'));
+    }
+);
+
+// Get service provider
+export const getServiceProvider = asyncErrorHandler(
+    async (req: IRequest, res: Response, next: NextFunction) => {
+        const { providerId } = req.body;
+        
+        // Find the service provider (merchant) by userId
+        const merchantExist = await Provider.findOne({ userId: providerId });
+
+        if (merchantExist) {
+            // Return the service provider details if found
+            return res.status(200).json({
+                status: 'success',
+                provider: {
+                    id: merchantExist._id,
+                    name: merchantExist.name,
+                    email: merchantExist.email,
+                    phone: merchantExist.phone,
+                    location: merchantExist.location,
+                    description: merchantExist.description
+                }
+            });
+        }
+
+        // If no provider is found, return a 404 error
+        next(createHttpError(404, 'Provider not found'));
     }
 );
 

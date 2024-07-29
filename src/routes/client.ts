@@ -7,6 +7,7 @@ import {
     search,
     updateCart,
     viewCart,
+    getServiceProvider
 } from '../controller/client';
 const router = express.Router();
 
@@ -17,4 +18,5 @@ router.get('/search/:searchTerm', search);
 router.get('/cartCount', cartCount);
 router.post('/becomeMerchant', becomeMerchant);
 router.post('/updateCart', updateCart);
+router.post('/getServiceProvider', getServiceProvider)
 export default router;
