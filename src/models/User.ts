@@ -36,6 +36,7 @@ const userSchema = new Schema<IUser>(
         isVerified: {
             type: Boolean,
             default: false,
+            required: [true, 'is required field']
         }
     },
     { timestamps: true }

@@ -44,6 +44,6 @@ const providerSchema = new Schema<IProvider>(
     { timestamps: true }
 );
 
-const Provider = model<IProvider>('user', providerSchema);
+const Provider = model<IProvider>('provider', providerSchema);
 
 export default Provider;

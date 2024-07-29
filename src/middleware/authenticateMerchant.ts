@@ -19,6 +19,6 @@ export const authenticateMerchant = asyncErrorHandler(
         if (merchant) {
             return next();
         }
-        next(createHttpError(401, 'Only merchants are allowed'));
+        next(createHttpError(401, 'Only merchants can access'));
     }
 );
