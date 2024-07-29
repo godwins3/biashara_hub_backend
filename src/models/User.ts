@@ -6,6 +6,8 @@ export interface IUser extends Document {
     phone: string;
     password?: string;
     role: string;
+    verificationToken: string;
+    isVerified: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -26,6 +28,14 @@ const userSchema = new Schema<IUser>(
         role: {
             type: String,
             required: [true, 'is required field']
+        },
+        verificationToken: {
+            type: String,
+            required: [true, 'is required field']
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
         }
     },
     { timestamps: true }

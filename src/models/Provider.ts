@@ -8,6 +8,8 @@ export interface IProvider extends Document {
     description: string;
     password?: string;
     role: string;
+    verificationToken: string;
+    isVerified: boolean;
 }
 
 const providerSchema = new Schema<IProvider>(
@@ -30,6 +32,13 @@ const providerSchema = new Schema<IProvider>(
         role: {
             type: String,
             required: [true, 'is required field']
+        },
+        verificationToken: {
+            type: String,
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
         }
     },
     { timestamps: true }

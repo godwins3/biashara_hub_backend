@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import Merchant from '../models/Merchant';
 import Provider, { IProvider } from '../models/Provider';
 
+import { generateVerificationToken, sendVerificationEmail } from '../utils/emailVerification';
+
 dotenv.config();
 
 const findUserOrProvider = async (email: string, password: string) => {
@@ -23,6 +25,22 @@ const findUserOrProvider = async (email: string, password: string) => {
 
     return null;
 };
+
+const findUserOrProviderToken = async (token: string) => {
+    const user = await User.findOne({ verificationToken: token }).select('+verificationToken');
+    if (user) {
+        return { entity: user, verificationToken: user.verificationToken as string };
+    }
+
+    const provider = await Provider.findOne({ verificationToken: token }).select('+verificationToken');
+    if (provider) {
+        return { entity: provider, verificationToken: provider.verificationToken as string };
+    }
+
+    return null;
+};
+
+
 const getLicenseId = async (userId: string) => {
     const checkMerchant = await Merchant.findOne({ userId });
     return checkMerchant?.licenseId || 0;
@@ -34,31 +52,48 @@ export const seekerSignUp = asyncErrorHandler(
         const { username, email, phone, password, role } = req.body;
         const name = username;
         const hashedPassword = await encPassword(password);
-        const user = new User({ name, email, phone, password: hashedPassword, role });
+        const verificationToken = generateVerificationToken();
+        const user = new User({ name, email, phone, password: hashedPassword, role, verificationToken });
         const result = await user.save();
+        await sendVerificationEmail(email, verificationToken, role);
         const resultObject = result.toObject();
-        delete resultObject.password;
-        const token = jwt.sign(resultObject, process.env.JWT_SECRET_KEY!);
-        res.cookie('cookieName', '1234', { maxAge: 900000, httpOnly: true });
-        res.json(resultObject);
+        res.json({ status: 'Success', message: 'User registered. Please verify your email.' });
     }
 );
 
-//  Seeker Signup
+//  Provider Signup
 export const providerSignUp = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const { username, email, phone, location, description, password, role } = req.body;
         const name = username;
         const hashedPassword = await encPassword(password);
-        const provider = new Provider({ name, email, phone, location, description, password: hashedPassword, role });
+        const verificationToken = generateVerificationToken();
+        const provider = new Provider({ name, email, phone, location, description, password: hashedPassword, role, verificationToken });
         const result = await provider.save();
+        await sendVerificationEmail(email, verificationToken, role);
         const resultObject = result.toObject();
-        delete resultObject.password;
-        const token = jwt.sign(resultObject, process.env.JWT_SECRET_KEY!);
-        res.cookie('cookieName', '1234', { maxAge: 900000, httpOnly: true });
-        res.json(resultObject);
+        res.json({ status: 'Success', message: 'Provider registered. Please verify your email.' });
     }
 );
+
+// verify email
+export const verifyEmail = asyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { token } = req.query;
+
+        const user = await User.findOne({ verificationToken: token });
+
+        if (!user) {
+            return next(createHttpError(404, 'Invalid token'));
+        }
+
+        user.isVerified = true;
+        await user.save();
+
+        res.json({ status: 'Success', message: 'Email verified' });
+    }
+);
+
 
 // Login
 export const login = asyncErrorHandler(
@@ -92,7 +127,7 @@ export const login = asyncErrorHandler(
 );
 
 // Reset password
-export const resetPassword = asyncErrorHandler(
+export const resetSeekerPassword = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const { email, password } = req.body;
         const hashedPassword = await encPassword(password);
@@ -114,5 +149,24 @@ export const resetPassword = asyncErrorHandler(
     }
 );
 
-// verify email
+export const resetProviderPassword = asyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { email, password } = req.body;
+        const hashedPassword = await encPassword(password);
 
+        const user: IProvider | null = await Provider.findOneAndUpdate(
+            {
+                email: email.toLowerCase(),
+            },
+            { password: hashedPassword },
+            {
+                new: true,
+            }
+        );
+        if (user) {
+            res.json({ status: 'Success', message: 'Password changed' });
+        } else {
+            next(createHttpError(404, 'User not found'));
+        }
+    }
+);
