@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import asyncErrorHandler from '../utils/asyncErrorHandler';
 import User, { IUser } from '../models/User';
+import Provider, { IProvider } from '../models/Provider';
 import { Schema } from 'mongoose';
 
 dotenv.config();
@@ -29,3 +30,26 @@ export const authenticate = asyncErrorHandler(
         }
     }
 );
+
+// Middleware to verify JWT and check if the user is a provider
+export const authenticateProvider = asyncErrorHandler(
+    async (req: IRequest, res: Response, next: NextFunction) => {
+        const token = req.headers.authorization;
+        if (token) {
+            const userData = jwt.verify(token, process.env.JWT_SECRET_KEY!) as {
+                _id: Schema.Types.ObjectId;
+            };
+            // Check in DB
+            const user: IProvider | null = await Provider.findById(userData._id);
+            if (user) {
+                req.userId = userData._id;
+                return next();
+            }
+            return next(createHttpError(401, 'Only merchants are allowed'));
+        } else {
+            return next(createHttpError(404, 'Token not found'));
+        }
+    }
+);
+
+// Apply this middleware to provider-specific routes
