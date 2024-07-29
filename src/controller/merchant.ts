@@ -18,7 +18,6 @@ export const addProduct = asyncErrorHandler(
 
             const base64 = base64Match[1]; // This is the actual Base64 string
             const buffer = Buffer.from(base64, 'base64');
-            console.log('Buffer created successfully:', buffer);
             
             const imageUrl = await uploadImage(buffer, imageId);
             if (typeof imageUrl != 'string') {
@@ -34,7 +33,6 @@ export const addProduct = asyncErrorHandler(
                     userId,
                 });
                 const result = await product.save();
-                console.log(result)
                 return res.json(result);
             }
             next(createHttpError(401, 'Request not allowed'));
