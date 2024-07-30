@@ -77,4 +77,33 @@ export const getProducts = asyncErrorHandler(
     }
 );
 
-//TODO: Update Product
+// Update Product
+export const updateProduct = async (req: Request, res: Response) => {
+    const { id } = req.params; // Extract product ID from request parameters
+    const updateData = req.body; // Extract updated product data from request body
+
+    try {
+        // Validate that the updateData contains only allowed fields
+        const allowedUpdates = ['name', 'category', 'description', 'price', 'imageUrl'];
+        const updates = Object.keys(updateData);
+        const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
+
+        if (!isValidOperation) {
+            return res.status(400).json({ message: 'Invalid updates!' });
+        }
+
+        // Find the product by ID and update it
+        const product = await Product.findByIdAndUpdate(id, updateData, {
+            new: true, // Return the updated document
+            runValidators: true, // Ensure validation rules are applied
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found!' });
+        }
+
+        res.status(200).json(product);
+    } catch (error) {
+        res.status(500).json({ message: error });
+    }
+};
