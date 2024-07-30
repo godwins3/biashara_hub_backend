@@ -1,12 +1,9 @@
 import express from 'express';
-import { addBook, editBook, getAllBooks, getBooksByProviderId, getBooksByUserId, } from '../controller/book';
+import { addBook, getBooksByEmail } from '../controller/book';
 
 const router = express.Router();
 
-router.post('/addBook', addBook)
-router.post('/editBook', editBook)
-router.get('/getBooksByUserId/:userId', getBooksByUserId)
-router.get('/getBookByProducerId', getBooksByProviderId)
-router.get('/getallBooks', getAllBooks)
+router.post('/addBook', addBook);
+router.post('/getBooksByEmail', getBooksByEmail);
 
 export default router;

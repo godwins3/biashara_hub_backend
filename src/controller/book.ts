@@ -5,6 +5,10 @@ import { IRequest } from '../middleware/authenticateMerchant';
 import createHttpError from 'http-errors';
 import Book, { IBook } from '../models/book';
 import Product, { IProduct } from '../models/Product';
+import Provider from '../models/Provider';
+import User, { IUser }from '../models/User';
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 // Add Book
 export const addBook = asyncErrorHandler(
@@ -119,36 +123,98 @@ export const getAllBooks = asyncErrorHandler(
     }
 );
 
-// Fetch All Books by User ID
-export const getBooksByUserId = asyncErrorHandler(
+// Define a Booking interface based on the structure of your bookings
+interface IBooking {
+    _id: string;
+    userId: string;
+    productId: string;
+    quantity: number; // Include other relevant fields as needed
+    location?: string; // Optional field if applicable
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+interface UserInfo {
+    name: string | null;  // User name can be null
+    phone: string | null; // User phone can be null
+}
+
+// Fetch All Books by email
+export const getBooksByEmail = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId  = req.params.userId;
-         // Convert userId to ObjectId
-        //  const userObjectId = new Types.ObjectId(userId as string);
+        const { email } = req.body;
 
         try {
-            console.log(userId)
-            // Step 1: Find all products added by the user
-            const products = await Product.find({ userId: userId }).lean();
-            console.log('Products found:', products);
+            if (!email) {
+                return res.status(400).json({ message: 'Email is required' });
+            }
+
+            // Step 1: Find the user by email
+            const user = await Provider.findOne({ email }).lean();
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const userId = user._id;
+
+            // Step 2: Find all products added by the user
+            const products = await Product.find({ userId });
             if (!products.length) {
                 return res.status(404).json({ message: 'No products found for this user' });
             }
-    
-            // Step 2: Extract product IDs
+
+            // Step 3: Extract product IDs
             const productIds = products.map(product => product._id);
-            console.log(productIds)
-            // Step 3: Fetch bookings associated with those product IDs
-            const bookings = await Book.find({ productId: { $in: productIds } });
-            console.log(bookings)
-            // Step 4: Return the bookings
-            return res.status(200).json(bookings);
+
+            // Step 4: Fetch bookings associated with those product IDs
+            const bookings: IBooking[] = await Book.find({ productId: { $in: productIds } }).lean();
+
+            // Check if any bookings were found
+            if (!bookings.length) {
+                return res.status(404).json({ message: 'No bookings found for these products' });
+            }
+
+            // Function to enrich bookings with user names
+            async function enrichOrdersWithUserNames(bookings: IBooking[]): Promise<IBooking[]> {
+                const uniqueUserIds = [...new Set(bookings.map(booking => booking.userId))]; // Get unique userIds
+
+                // Debugging: Log the extracted unique userIds
+                console.log('Extracted Unique User IDs:', uniqueUserIds);
+
+                const userMap: { [key: string]: UserInfo } = {}; // userMap for storing UserInfo objects
+                // Fetch user details for each unique userId
+                for (const userId of uniqueUserIds) {
+                    const user: IUser | null = await User.findOne({ _id: userId }).exec();
+                    if (user) {
+                        userMap[userId] = {
+                            name: user ? user.name : '',
+                            phone: user ? user.phone : null,
+                        };
+                    } 
+
+                    // Debugging: Log each fetched user
+                    console.log(`Fetched User for ID ${userId}:`, user);
+                }
+
+                // Enrich bookings with user names
+                return bookings.map(booking => ({
+                    ...booking, // No need to call toObject() since we used lean()
+                    userDetails: userMap[booking.userId] || null // Add user name or null if not found
+                }));
+            }
+
+            // Enrich bookings with user names
+            const enrichedBookings = await enrichOrdersWithUserNames(bookings);
+
+            // Step 5: Return the enriched bookings
+            return res.status(200).json(enrichedBookings);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             return res.status(500).json({ message: 'Internal server error', error: error });
         }
     }
 );
+
 // Fetch All Books by User ID
 export const getBooksByProviderId = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {

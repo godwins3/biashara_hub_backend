@@ -4,30 +4,8 @@ import { IRequest } from '../middleware/authenticateMerchant';
 import Merchant, { IMerchant } from '../models/Merchant';
 import createHttpError from 'http-errors';
 import Product from '../models/Product';
-import Cart, { ICart } from '../models/Cart';
 import Provider from '../models/Provider';
 
-// Become to Merchant
-export const becomeMerchant = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId = req.userId;
-        const { licenseId } = req.body;
-        const merchantExist = await Merchant.findOne({ userId });
-        if (!merchantExist) {
-            if (userId) {
-                const merchant = new Merchant<IMerchant>({ userId, licenseId });
-                const result = await merchant.save();
-                const resObj = result.toObject();
-                return res.status(201).json({ status: 'success', ...resObj });
-            }
-        } else {
-            return res
-                .status(200)
-                .json({ status: 'success', message: 'Already a merchant' });
-        }
-        next(createHttpError(401, 'Request not allowed'));
-    }
-);
 
 // Get service provider
 export const getServiceProvider = asyncErrorHandler(

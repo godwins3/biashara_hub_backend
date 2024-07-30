@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import Provider, { IProvider } from '../models/Provider';
 import Merchant, { IMerchant } from '../models/Merchant';
 
-import { generateVerificationToken, sendVerificationEmail } from '../utils/emailVerification';
+import { generateVerificationToken, sendVerificationEmail, sendEmail} from '../utils/emailVerification';
 
 dotenv.config();
 
