@@ -85,7 +85,7 @@ export const getProductsByCategory = asyncErrorHandler(
 
 // Get Merchant Products
 export const getProviderProducts = asyncErrorHandler(
-    async (req: IRequest, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         const {providerId} = req.body;
         const { pageNumber, limit } = req.params;
         const query = Product.find({ userId: providerId })

@@ -1,33 +1,42 @@
 import { Request, Response, NextFunction } from 'express';
 import asyncErrorHandler from '../utils/asyncErrorHandler';
+import { IRequest } from '../middleware/authenticateMerchant';
 import createHttpError from 'http-errors';
 import Book, { IBook } from '../models/book';
 
 // Add Book
 export const addBook = asyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
-        const { userId, providerId, productId, quantity, location } = req.body;
+    async (req: IRequest, res: Response, next: NextFunction) => {
+        const { userId, productId, quantity, location } = req.body;
 
-        if (!userId || !providerId || !productId || !quantity || !location) {
+        console.log(req.body)
+        console.log(userId)
+        // Check for required fields
+        if (!productId || !quantity || !location) {
             return next(createHttpError(400, 'All fields are required'));
         }
 
         const book = new Book({
             userId,
-            providerId,
             productId,
             quantity,
             location,
         });
+        console.log(book)
+        try {
+            const savedBook = await book.save();
 
-        const savedBook = await book.save();
-
-        res.status(201).json({
-            status: 'success',
-            data: {
-                book: savedBook,
-            },
-        });
+            res.status(201).json({
+                status: 'success',
+                data: {
+                    book: savedBook,
+                },
+            });
+            console.log(res)
+        } catch (error) {
+            console.error(error)
+            return next(createHttpError(500, 'Failed to save the book'));
+        }
     }
 );
 

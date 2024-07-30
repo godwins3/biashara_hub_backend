@@ -14,5 +14,5 @@ router.get('/getProductsByCategory', getProductsByCategory);
 router.get('/search/:searchTerm', search);
 router.post('/becomeMerchant', becomeMerchant);
 router.post('/getServiceProvider', getServiceProvider)
-router.get('/getProviderProducts', getProviderProducts)
+router.post('/getProviderProducts', getProviderProducts)
 export default router;
