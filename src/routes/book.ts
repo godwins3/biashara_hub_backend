@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/addBook', addBook)
 router.post('/editBook', editBook)
-router.get('/getBooksByUserId', getBooksByUserId)
+router.get('/getBooksByUserId/:userId', getBooksByUserId)
 router.get('/getBookByProducerId', getBooksByProviderId)
 router.get('/getallBooks', getAllBooks)
 

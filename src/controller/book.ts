@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import asyncErrorHandler from '../utils/asyncErrorHandler';
 import { IRequest } from '../middleware/authenticateMerchant';
 import createHttpError from 'http-errors';
@@ -121,30 +122,33 @@ export const getAllBooks = asyncErrorHandler(
 // Fetch All Books by User ID
 export const getBooksByUserId = asyncErrorHandler(
     async (req: IRequest, res: Response, next: NextFunction) => {
-        const userId  = req.userId
+        const userId  = req.params.userId;
+         // Convert userId to ObjectId
+        //  const userObjectId = new Types.ObjectId(userId as string);
 
         try {
-    
+            console.log(userId)
             // Step 1: Find all products added by the user
-            const products = await Product.find({ userId: userId });
-    
+            const products = await Product.find({ userId: userId }).lean();
+            console.log('Products found:', products);
             if (!products.length) {
                 return res.status(404).json({ message: 'No products found for this user' });
             }
     
             // Step 2: Extract product IDs
             const productIds = products.map(product => product._id);
-    
+            console.log(productIds)
             // Step 3: Fetch bookings associated with those product IDs
             const bookings = await Book.find({ productId: { $in: productIds } });
-    
+            console.log(bookings)
             // Step 4: Return the bookings
             return res.status(200).json(bookings);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             return res.status(500).json({ message: 'Internal server error', error: error });
         }
-    });
+    }
+);
 // Fetch All Books by User ID
 export const getBooksByProviderId = asyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
